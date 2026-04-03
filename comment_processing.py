@@ -1,4 +1,5 @@
 import re
+import json
 from selenium.webdriver.common.by import By
 
 # EXTRACT STRUCTURED TOP-LEVEL COMMENTS
@@ -142,3 +143,14 @@ def save_comments_to_file(comments, filename):
 
     except Exception as e:
         print(f"\nError saving comments to file: {e}")
+
+# SAVE ALL DATA TO JSON FILE
+def save_data_to_json(data, filename):
+    try:
+        with open(filename, "w", encoding="utf-8") as file:
+            json.dump(data, file, indent=4, ensure_ascii=False)
+
+        print(f"\nSaved data to {filename}")
+
+    except Exception as e:
+        print(f"\nError saving JSON data to file: {e}")

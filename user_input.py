@@ -70,3 +70,21 @@ def confirm_extraction():
 
         else:
             print("Invalid input. Please enter Y or N.")
+
+# USERNAME SUBMISSION FOR PROFILE ANALYSIS
+def get_profile_username():
+    while True:
+        username = input("\nEnter the Instagram username to analyze: ").strip()
+
+        if username == "":
+            print("Username cannot be empty. Please try again.")
+            continue
+
+        if "@" in username:
+            username = username.replace("@", "").strip()
+
+        if " " in username:
+            print("Username cannot contain spaces. Please try again.")
+            continue
+
+        return username

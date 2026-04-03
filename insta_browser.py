@@ -6,15 +6,25 @@ from config import MIN_SCROLL_DELAY, MAX_SCROLL_DELAY
 
 # OPEN INSTAGRAM LOGIN PAGE
 def open_instagram_login():
-    try: 
+    try:
         driver = webdriver.Chrome()
-        # driver.maximize_window()
         driver.get("https://www.instagram.com/accounts/login/")
         time.sleep(3)
 
-        print("\nInstagram login page opened successfully in a browser.") 
-        input("After logging in, press ENTER here to continue...")
-        
+        print("\nInstagram login page opened successfully in a browser.")
+        print("Waiting for Instagram login to complete...")
+
+        while True:
+            current_url = driver.current_url.lower()
+
+            # if user is no longer on login-related page, assume login worked
+            if "accounts/login" not in current_url:
+                print("\nLogin detected.")
+                time.sleep(2)
+                break
+
+            time.sleep(2)
+
         return driver
 
     except Exception as e:
@@ -44,6 +54,269 @@ def load_post_after_login(driver, post_url):
     except Exception as e:
         print(f"\nError: Failed to load the Instagram post. {e}")
         return False
+# LOAD INSTAGRAM PROFILE PAGE
+def load_profile_page(driver, username):
+    try:
+        profile_url = f"https://www.instagram.com/{username}/"
+
+        driver.get(profile_url)
+        time.sleep(3)
+
+        current_page = driver.current_url
+
+        if "instagram.com" not in current_page:
+            print("\nError: Could not load the profile page.")
+            return False
+
+        print("\nInstagram profile loaded successfully.")
+        return True
+
+    except Exception as e:
+        print(f"\nError: Failed to load profile page. {e}")
+        return False
+
+# EXTRACT BASIC PROFILE INDICATORS
+def extract_basic_profile_data(driver, username):
+    try:
+        time.sleep(3)
+
+        profile_data = {
+            "display_name": None,
+            "username": username,
+            "posts": None,
+            "followers": None,
+            "following": None,
+            "bio": None,
+            "links": None,
+            "is_private": False,
+        }
+
+        # GET FULL PAGE TEXT
+        page_text = driver.find_element(By.TAG_NAME, "body").text
+
+        # CHECK IF PROFILE IS PRIVATE
+        if "This profile is private" in page_text or "This account is private" in page_text:
+            profile_data["is_private"] = True
+        
+        # GET DISPLAY NAME
+        try:
+            display_name_element = driver.find_element(
+                By.XPATH,
+                "//section/main//header/div/section[2]/div[1]/div[2]/span"
+            )
+            profile_data["display_name"] = display_name_element.text.strip()
+        except Exception:
+            profile_data["display_name"] = None
+
+        # GET POSTS
+        try:
+            post_element = driver.find_element(
+                By.XPATH,
+                "//section/main//header/div/section[2]/div[1]/div[3]/div[1]/span/span/span"
+            )
+            profile_data["posts"] = post_element.text.strip()
+        except Exception:
+            profile_data["posts"] = None
+
+        # GET FOLLOWERS
+        try:
+            followers_element = driver.find_element(
+                By.XPATH,
+                "//section/main//header/div/section[2]/div[1]/div[3]/div[2]/a/span/span/span"
+            )
+            profile_data["followers"] = followers_element.text.strip()
+        except Exception:
+            profile_data["followers"] = None
+
+        # GET FOLLOWING
+        try:
+            following_element = driver.find_element(
+                By.XPATH,
+                "//section/main//header/div/section[2]/div/div[3]/div[3]/a/span/span/span"
+            )
+            profile_data["following"] = following_element.text.strip()
+        except Exception:
+            profile_data["following"] = None
+
+        # CLICK "MORE" IN BIO IF PRESENT
+        try:
+            more_buttons = driver.find_elements(
+                By.XPATH,
+                "//section/main//header//span[normalize-space()='more']"
+            )
+
+            for more_button in more_buttons:
+                if more_button.is_displayed():
+                    driver.execute_script("arguments[0].scrollIntoView(true);", more_button)
+                    time.sleep(0.5)
+                    driver.execute_script("arguments[0].click();", more_button)
+                    time.sleep(1)
+                    break
+
+        except Exception:
+            pass
+
+        # GET BIO
+        try:
+            bio_elements = driver.find_elements(
+                By.XPATH,
+                "//section/main//header/section[1]//span/div/span"
+            )
+
+            bio_text = None
+
+            for bio_element in bio_elements:
+                text = bio_element.text.strip()
+
+                if text != "" and text.lower() != "more":
+                    bio_text = text
+                    break
+
+            profile_data["bio"] = bio_text
+
+        except Exception:
+            profile_data["bio"] = None
+
+        # GET PROFILE LINKS (IF ANY)
+        try:
+            link_elements = driver.find_elements(
+                By.XPATH,
+                "//section/main//header//a[contains(@href, 'http')]"
+            )
+
+            links = []
+
+            for link in link_elements:
+                href = link.get_attribute("href")
+                text = link.text.strip()
+
+                # avoid empty or duplicate entries
+                if href and href not in links:
+                    links.append(href)
+
+            profile_data["links"] = links if len(links) > 0 else None
+
+        except Exception:
+            profile_data["links"] = None
+
+        print("\nBasic profile data extracted successfully.")
+        return profile_data
+
+    except Exception as e:
+        print(f"\nError extracting basic profile data: {e}")
+        return None
+
+# OPEN "ABOUT THIS ACCOUNT" FROM PROFILE MENU
+def open_profile_details_menu(driver):
+    try:
+        # CLICK THE THREE DOTS
+        menu_button = driver.find_element(
+            By.XPATH,
+            "//section/main//header/div/section[2]/div[1]/div[1]/div[2]"
+        )
+
+        driver.execute_script("arguments[0].click();", menu_button)
+        time.sleep(2)
+
+        # CLICK "ABOUT THIS ACCOUNT"
+        clicked = False
+
+        # TRY STABLE TEXT FIRST
+        try:
+            about_button = driver.find_element(
+                By.XPATH,
+                "//div[text()='About this account']"
+            )
+            driver.execute_script("arguments[0].click();", about_button)
+            time.sleep(2)
+            clicked = True
+
+        except Exception:
+            pass
+
+        # FALLBACK TO ABSOLUTE XPATH
+        if not clicked:
+            try:
+                about_button = driver.find_element(
+                    By.XPATH,
+                    "/html/body/div[1]/div/div/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div/div/div/div/div/div/div[1]/div/div[6]/div[1]"
+                )
+                driver.execute_script("arguments[0].click();", about_button)
+                time.sleep(2)
+                clicked = True
+
+            except Exception:
+                print("Could not find 'About this account' button.")
+                return False
+
+        print("\nProfile details menu opened successfully.")
+        return True
+
+    except Exception as e:
+        print(f"\nError: Could not open profile details menu. {e}")
+        return False
+
+# EXTRACT "ABOUT THIS ACCOUNT" DETAILS
+def extract_about_account_data(driver):
+    try:
+        about_data = {
+            "date_joined": None,
+            "account_based_in": None,
+            "former_usernames": None
+        }
+
+        # GET DATE JOINED
+        try:
+            date_joined_element = driver.find_element(
+                By.XPATH,
+                "//div[contains(@aria-label, 'Date joined')]//span[2]"
+            )
+            about_data["date_joined"] = date_joined_element.text.strip()
+        except Exception:
+            about_data["date_joined"] = None
+
+        # GET ACCOUNT BASED IN
+        try:
+            account_based_element = driver.find_element(
+                By.XPATH,
+                "//div[contains(@aria-label, 'Account based in')]//span[2]"
+            )
+            about_data["account_based_in"] = account_based_element.text.strip()
+        except Exception:
+            about_data["account_based_in"] = None
+
+        # GET FORMER USERNAMES
+        try:
+            row = driver.find_element(
+                By.XPATH,
+                "//div[contains(@aria-label, 'Former usernames')]"
+            )
+
+            text = row.get_attribute("aria-label")  # e.g. "Former usernames 6"
+
+            if text:
+                about_data["former_usernames"] = text.replace("Former usernames", "").strip()
+            else:
+                about_data["former_usernames"] = None
+
+        except Exception:
+            try:
+                
+                # Fallback to full xpath
+                element = driver.find_element(
+                    By.XPATH,
+                    "/html/body/div[4]/div[1]/div/div[2]/div/div/div/div/div/div/div/div/div[1]/div/div/div[2]/div/div/div[2]/div[3]/div[2]/div[1]"
+                )
+                about_data["former_usernames"] = element.text.strip()
+            except Exception:
+                about_data["former_usernames"] = None
+
+        print("\nAbout-this-account data extracted successfully.")
+        return about_data
+
+    except Exception as e:
+        print(f"\nError extracting about-this-account data: {e}")
+        return None
 
 # FIND COMMENT CANDIDATES USING TIMESTAMPS
 def find_comment_candidates(container):
