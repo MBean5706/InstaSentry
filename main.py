@@ -5,9 +5,10 @@
 
 import time
 from config import MAX_COMMENTS, MAX_NO_NEW_SCROLLS
-from comment_processing import save_comments_to_file
-from comment_processing import save_data_to_json
-
+from comment_processing import (
+    save_comments_to_file,
+    save_data_to_json
+)
 from user_input import (
     get_post_url,
     get_comment_limit,

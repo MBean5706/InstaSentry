@@ -1,3 +1,5 @@
+from config import MAX_COMMENTS, MAX_NO_NEW_SCROLLS
+
 # POST URL SUBMISSION
 def get_post_url():
     while True:
@@ -16,20 +18,20 @@ def get_post_url():
 # COMMENT COUNT SELECTION
 def get_comment_limit():
     while True:
-        comment_limit = input("\nHow many comments would you like to collect? (max 100): ").strip()
+        comment_limit = input(f"\nHow many comments would you like to collect? (max {MAX_COMMENTS}): ").strip()
 
         if comment_limit == "":
-            print("Comment limit cannot be empty. Please try again.")
+            print("Error: Comment limit cannot be empty. Please try again.")
             continue
 
         if not comment_limit.isdigit():
-            print("Please enter a whole number between 1 and 100.")
+            print(f"Error: Please enter a whole number between 1 and {MAX_COMMENTS}.")
             continue
 
         comment_limit = int(comment_limit)
 
-        if comment_limit < 1 or comment_limit > 100:
-            print("Comment limit must be between 1 and 100.")
+        if comment_limit < 1 or comment_limit > MAX_COMMENTS:
+            print(f"Error: Comment limit must be between 1 and {MAX_COMMENTS}.")
             continue
 
         return comment_limit
