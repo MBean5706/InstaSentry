@@ -89,6 +89,8 @@ def extract_basic_profile_data(driver, username):
             "bio": None,
             "links": None,
             "is_private": False,
+            "profile_picture_present": False,
+            "profile_picture_src": None,
         }
 
         # GET FULL PAGE TEXT
@@ -97,6 +99,20 @@ def extract_basic_profile_data(driver, username):
         # CHECK IF PROFILE IS PRIVATE
         if "This profile is private" in page_text or "This account is private" in page_text:
             profile_data["is_private"] = True
+        
+        # CHECK PROFILE PICTURE
+        try:
+            profile_pic_element = driver.find_element(
+                By.XPATH,
+                "//section/main//header//section[1]//a/img"
+            )
+
+            profile_data["profile_picture_present"] = True
+            profile_data["profile_picture_src"] = profile_pic_element.get_attribute("src")
+
+        except Exception:
+            profile_data["profile_picture_present"] = False
+            profile_data["profile_picture_src"] = None
         
         # GET DISPLAY NAME
         try:

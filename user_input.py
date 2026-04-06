@@ -1,5 +1,15 @@
 from config import MAX_COMMENTS, MAX_NO_NEW_SCROLLS
 
+# FOR TESTING!!!
+def get_analysis_mode():
+    while True:
+        mode = input("\nSelect analysis mode: 1 = Full Analysis, 2 = Profile Only: ").strip()
+
+        if mode in ["1", "2"]:
+            return mode
+
+        print("Invalid input. Please enter 1 or 2.")
+
 # POST URL SUBMISSION
 def get_post_url():
     while True:
@@ -60,7 +70,7 @@ def get_keywords():
 # EXTRACTION CONFIRMATION
 def confirm_extraction():
     while True:
-        choice = input("\nReady to extract comments? (Y/N): ").strip().lower()
+        choice = input("\nContinue? (Y/N): ").strip().lower()
 
         if choice == "y":
             print("\nLoading login window...")

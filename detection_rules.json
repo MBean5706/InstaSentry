@@ -1,0 +1,73 @@
+{
+    "flagged_link_terms": [
+        "onlyfans",
+        "linktr.ee",
+        "bit.ly",
+        "beacons.ai",
+        "cam",
+        "fansly"
+    ],
+    "flagged_bio_terms": [
+        "patriot",
+        "truth",
+        "wake up",
+        "fight back",
+        "resist",
+        "freedom",
+        "save the children"
+    ],
+    "vague_bio_terms": [
+        "just here",
+        "living life",
+        "dm me",
+        "follow back"
+    ],
+    "propaganda_phrases": [
+        "wake up",
+        "fight back",
+        "stand up",
+        "save our country",
+        "take back our nation",
+        "spread the truth",
+        "they are lying",
+        "the media lies",
+        "patriots unite"
+    ],
+    "emotional_words": [
+        "urgent",
+        "now",
+        "immediately",
+        "act",
+        "share",
+        "spread",
+        "danger",
+        "threat",
+        "crisis",
+        "corrupt",
+        "evil",
+        "lying",
+        "wake up",
+        "fight",
+        "stop them"
+    ],
+    "country_terms": [
+        "united states",
+        "usa",
+        "america",
+        "russia",
+        "ukraine",
+        "china",
+        "iran",
+        "israel",
+        "palestine",
+        "north korea",
+        "south korea",
+        "taiwan"
+    ],
+    "high_risk_countries": [
+    "russia",
+    "china",
+    "iran",
+    "north korea"
+    ]   
+}
