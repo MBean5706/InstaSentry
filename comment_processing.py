@@ -105,6 +105,27 @@ def filter_comments_by_keywords(comments, keywords):
         print(f"\nError: Could not filter comments by keywords. {e}")
         return []
 
+# GET COMMENTS BY USERNAME
+def get_comments_by_username(filtered_comments, target_username):
+    try:
+        if not filtered_comments or not target_username:
+            return []
+
+        target = target_username.lower().strip().replace("@", "")
+
+        matched = []
+
+        for comment in filtered_comments:
+            author = str(comment.get("author", "")).lower().strip().replace("@", "")
+
+            if author == target:
+                matched.append(comment)
+
+        return matched
+
+    except Exception:
+        return []
+
 # PRINT FILTERED COMMENTS
 def print_filtered_comments(filtered_comments):
     try:

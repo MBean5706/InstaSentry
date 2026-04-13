@@ -1,20 +1,17 @@
 {
   "manifest_version": 3,
-  "name": "InstaSentry",
+  "name": "InstaSentry Beta",
   "version": "1.0",
-  "description": "Analyzes Instagram comments for coordinated inauthentic behavior.",
+  "description": "InstaSentry side panel mock UI.",
+  "permissions": ["sidePanel", "downloads"],
+  "host_permissions": ["http://127.0.0.1:5000/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
-    "default_popup": "popup.html",
-    "default_icon": {
-      "16": "icon16.png",
-      "48": "icon48.png",
-      "128": "icon128.png"
-    }
+    "default_title": "InstaSentry"
   },
-  "icons": {
-    "16": "icon16.png",
-    "48": "icon48.png",
-    "128": "icon128.png"
-  },
-  "permissions": []
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  }
 }

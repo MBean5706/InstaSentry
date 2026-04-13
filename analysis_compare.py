@@ -146,60 +146,73 @@ def compare_username_structure(profile_data):
         if digit_count >= 6:
             return "highly_random"
 
-        # long numeric sequence or random pattern
+        # long numeric sequence
         if re.search(r"\d{4,}", username):
             return "random_pattern"
 
-        # minor numbers or symbols
+        # readable name + small number ending like drew22511 / mike2024
+        if re.match(r"^[a-z]+[0-9]{2,5}$", username):
+            return "generic_handle"
+
+        # readable username with minor symbols or small numbers
         if digit_count > 0 or symbol_count > 0:
             return "minor_numbers_symbols"
 
-        # normal readable username
         return "normal"
 
     except Exception:
         return "normal"
-    
+
+# CHECK IF DISPLAY NAME IS PRESENT
+def compare_display_name_presence(profile_data):
+    try:
+        display_name = profile_data.get("display_name")
+
+        if display_name is None:
+            return False
+
+        if str(display_name).strip() == "":
+            return False
+
+        return True
+
+    except Exception:
+        return False
+
 # ANALYZE DISPLAY NAME VS USERNAME MISMATCH
 def compare_name_username_mismatch(profile_data):
     try:
-        display_name = profile_data.get("display_name", "")
-        username = profile_data.get("username", "")
+        display_name = profile_data.get("display_name")
+        username = profile_data.get("username")
 
-        if display_name is None or username is None:
+        # ✅ OPTION A: if no display name → cannot compare
+        if display_name is None or str(display_name).strip() == "":
+            return "no_display_name"
+
+        if username is None or str(username).strip() == "":
             return "consistent"
 
-        display_name_clean = str(display_name).lower().strip().replace(" ", "")
-        username_clean = str(username).lower().strip().replace("_", "").replace(".", "")
+        display_name_clean = str(display_name).lower().strip()
+        username_clean = str(username).lower().strip()
 
-        # exact / very close match
-        if display_name_clean == username_clean:
-            return "consistent"
+        username_clean = username_clean.replace("_", "").replace(".", "")
 
-        if display_name_clean in username_clean or username_clean in display_name_clean:
-            return "minor_variation"
+        name_parts = [part for part in display_name_clean.split() if len(part) >= 3]
 
-        # split display name into parts
-        name_parts = str(display_name).lower().strip().split()
-
-        # if any major part of display name appears in username
+        # strong match
         for part in name_parts:
-            if len(part) >= 3 and part in username_clean:
+            if part in username_clean:
+                return "consistent"
+
+        # partial match
+        for part in name_parts:
+            if len(part) >= 4 and part[:3] in username_clean:
                 return "minor_variation"
-
-        # partial weak overlap
-        overlap_count = 0
-        for char in set(display_name_clean):
-            if char in username_clean and char.isalpha():
-                overlap_count += 1
-
-        if overlap_count >= 4:
-            return "noticeable_mismatch"
 
         return "completely_inconsistent"
 
     except Exception:
-        return "consistent"
+        return "no_display_name"
 
 # LOAD DETECTION RULES
 def load_detection_rules():
@@ -245,13 +258,23 @@ def compare_links_in_bio(profile_data):
         }
 
 # ANALYZE BIO CONTENT / PATTERN
+def match_term(term, text):
+    if not term or not text:
+        return False
+
+    text = text.lower()
+    term = term.lower()
+
+    pattern = r'\b' + re.escape(term) + r'\b'
+    return re.search(pattern, text) is not None
+
 def compare_bio_content(profile_data):
     try:
         bio = profile_data.get("bio")
 
-        if bio is None:
+        if bio is None or str(bio).strip() == "":
             return {
-                "bio_type": "vague_minimal",
+                "bio_type": "no_bio",
                 "matched_terms": [],
                 "emoji_count": 0
             }
@@ -266,19 +289,20 @@ def compare_bio_content(profile_data):
         matched_terms = []
         emoji_count = sum(1 for char in bio_text if ord(char) > 10000)
 
+        #MATCHING (NO PARTIAL MATCHES)
         for term in flagged_bio_terms:
-            if term.lower() in bio_lower:
+            if match_term(term, bio_lower):
                 matched_terms.append(term)
 
         if len(matched_terms) > 0:
             return {
                 "bio_type": "propaganda_or_coordinated",
-                "matched_terms": matched_terms,
+                "matched_terms": list(set(matched_terms)),
                 "emoji_count": emoji_count
             }
 
         for term in vague_bio_terms:
-            if term.lower() in bio_lower:
+            if match_term(term, bio_lower):
                 return {
                     "bio_type": "vague_minimal",
                     "matched_terms": [term],
@@ -463,8 +487,6 @@ def compare_comment_length(filtered_comments):
             "average_length": 0
         }
 
-import re
-
 # ANALYZE PUNCTUATION PATTERNS
 def compare_punctuation_patterns(filtered_comments):
     try:
@@ -526,6 +548,68 @@ def compare_capitalization_patterns(filtered_comments):
             "abnormal_count": 0
         }
 
+# ANALYZE REPETITIVE COMMENT PATTERNS    
+def compare_repetitive_comment_pattern(filtered_comments):
+    try:
+        if not filtered_comments:
+            return {
+                "pattern_type": "none",
+                "repeated_phrases": [],
+                "long_comment_count": 0
+            }
+
+        repeated_phrases = []
+        long_comment_count = 0
+        total_repetition_hits = 0
+
+        for comment in filtered_comments:
+            text = str(comment.get("text", "")).lower().strip()
+
+            if len(text) >= 180:
+                long_comment_count += 1
+
+            # split into rough phrase chunks
+            parts = [part.strip() for part in re.split(r"[.!?]", text) if part.strip() != ""]
+
+            seen_parts = {}
+            for part in parts:
+                if len(part) >= 15:
+                    seen_parts[part] = seen_parts.get(part, 0) + 1
+
+            for part, count in seen_parts.items():
+                if count >= 2:
+                    total_repetition_hits += 1
+                    repeated_phrases.append(part)
+
+            # repeated word pattern like "iran iran iran" or spam stacking
+            words = re.findall(r"\b\w+\b", text)
+            if len(words) >= 8:
+                unique_ratio = len(set(words)) / len(words)
+                if unique_ratio < 0.55:
+                    total_repetition_hits += 1
+
+        if total_repetition_hits == 0 and long_comment_count == 0:
+            pattern_type = "none"
+        elif total_repetition_hits <= 1 and long_comment_count <= 1:
+            pattern_type = "mild"
+        elif total_repetition_hits <= 3 or long_comment_count >= 1:
+            pattern_type = "heavy"
+        else:
+            pattern_type = "extreme"
+
+        return {
+            "pattern_type": pattern_type,
+            "repeated_phrases": repeated_phrases[:5],
+            "long_comment_count": long_comment_count
+        }
+
+    except Exception:
+        return {
+            "pattern_type": "none",
+            "repeated_phrases": [],
+            "long_comment_count": 0
+        }
+
 # GET FORMER USERNAME CHANGE COUNT
 def compare_username_changed(about_data):
     try:
@@ -574,4 +658,3 @@ def compare_account_location(about_data):
 
     except Exception:
         return "unknown"
-    

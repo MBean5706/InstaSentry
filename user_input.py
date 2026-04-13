@@ -1,9 +1,9 @@
 from config import MAX_COMMENTS, MAX_NO_NEW_SCROLLS
 
-# FOR TESTING!!!
+# Choose Mode
 def get_analysis_mode():
     while True:
-        mode = input("\nSelect analysis mode: 1 = Full Analysis, 2 = Profile Only: ").strip()
+        mode = input("\nSelect analysis mode: 1) Full Analysis, 2) Profile Only: ").strip()
 
         if mode in ["1", "2"]:
             return mode
@@ -67,22 +67,6 @@ def get_keywords():
 
         return keywords
 
-# EXTRACTION CONFIRMATION
-def confirm_extraction():
-    while True:
-        choice = input("\nContinue? (Y/N): ").strip().lower()
-
-        if choice == "y":
-            print("\nLoading login window...")
-            return True
-
-        elif choice == "n":
-            print("\nExtraction canceled.")
-            return False
-
-        else:
-            print("Invalid input. Please enter Y or N.")
-
 # USERNAME SUBMISSION FOR PROFILE ANALYSIS
 def get_profile_username():
     while True:
@@ -100,3 +84,15 @@ def get_profile_username():
             continue
 
         return username
+    
+# ASK RESTART
+def ask_restart():
+    while True:
+        choice = input("\nWould you like to run another analysis? (Y/N): ").strip().lower()
+
+        if choice == "y":
+            return True
+        elif choice == "n":
+            return False
+        else:
+            print("Invalid input. Please enter Y or N.")
